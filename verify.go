@@ -131,19 +131,22 @@ func VerifyHttp(pr string) bool {
 	}
 	tr.Proxy = http.ProxyURL(proxyUrl)
 	client := http.Client{Timeout: 10 * time.Second, Transport: &tr}
-	request, err := http.NewRequest("GET", "http://baidu.com", nil)
+	request, err := http.NewRequest("GET", "https://api.geetest.com/get.php", nil)
 	//处理返回结果
 	res, err := client.Do(request)
 	if err != nil {
 		return false
 	}
-	defer res.Body.Close()
-	dataBytes, _ := io.ReadAll(res.Body)
-	result := string(dataBytes)
-	if strings.Contains(result, "0;url=http://www.baidu.com") {
-		return true
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Println("关闭失败", err)
+		}
+	}(res.Body)
+	if res.StatusCode != 200 {
+		return false
 	}
-	return false
+	return true
 }
 func VerifyHttps(pr string) bool {
 	destConn, err := net.DialTimeout("tcp", pr, 10*time.Second)
